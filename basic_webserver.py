@@ -6,17 +6,55 @@ import sys
 class WSGIServer(object):
 
     address_family = socket.AF_INET
+    # This is the default socket type for TCP/IP, AF_INET means IPv4
     socket_type = socket.SOCK_STREAM
+    # SOCK_STREAN means a TCP socket
     request_queue_size = 1
-
+    # The number of requests to queue up before refusing new connections
+    
+    # When working with web sockets in python (or any other language), you
+    # need to specify two key parameters: the address family and the socket type.
+    # AF_INET stands for "Address Family Internet" and is used to specify
+    # the addressing format to use with the sockets. There are a few variations
+    # of AF_INET for different address formats (IPv4, IPv6, etc.). IPv4 is the
+    # most common format for internet address formats.
+    
+    # SOCK_STREAM defines the socket type, which determines the transport protocol
+    # and communication characteristics. TCP (Transmission Control Protocol) is the most
+    # common transport protocol used on the internet. It is a connection-oriented
+    # protocol that provides reliable, ordered, and error-checked delivery of data.
+    # SOCK_STREAM is used to create a TCP socket, which is the most common type of socket
+    # used for web servers and clients. It allows for bidirectional communication
+    # between the client and server, and it ensures that data is delivered in the correct
+    # order and without errors. There are other socket types, such as SOCK_DGRAM, SOCK_RAW etc.
+    # that are used for different purposes, but SOCK_STREAM is the most common type.
+    
+    # When combined AF_INET and SOCK_STREAM creates a TCP/IPv4 socket that uses the afforementioned
+    # addressing format and transport protocol. It is suitable for protocols like HTTP.
+    
     def __init__(self, server_address):
         # Create a listening socket
         self.listen_socket = listen_socket = socket.socket(
             self.address_family,
             self.socket_type
         )
-        # Allow to reuse the same address
+        # The socket is created using the special variables created above.
+        # The init method is used because the server is a class and the init method
+        # is called when the class is instantiated. The server_address variable
+        # is a tuple that contains the host and port number. listen_socket is the
+        # socket object created with the .socket function, address family and
+        # socket type variables.
+        
         listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # This line sets the newly created socket to allow address reuse. This essentially
+        # means that we are disabling the timeout behavior of the socket. Usually there is a 2 minute
+        # timeout when you restart a server. This line allows the server to restart immediately again.
+        # .setsockopt means set stock options.
+        
+        # SOL_SOCKET is a socket option that allows you to set options at the socket level.
+        # SO_REUSEADDR is the specific option just mentioned (allow address reuse).
+        # 1 is a boolean value that enables the option. 0 would disable it.
+        
         # Bind
         listen_socket.bind(server_address)
         # Activate
