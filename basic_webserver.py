@@ -198,7 +198,7 @@ class WSGIServer(object):
         # Add necessary server headers
         server_headers = [
             # set server date dynamically
-            ('Date', f'${current_date}'),
+            ('Date', f'{current_date}'),
             ('Server', 'WSGIServer 0.2'),
         ]
         self.headers_set = [status, response_headers + server_headers]
