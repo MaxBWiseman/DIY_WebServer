@@ -145,10 +145,22 @@ class WSGIServer(object):
         # encodes them to bytes, and sends them over the client connection.
         # Finally, it closes the client connection to free up resources.
 
+
+    # Below are the class methods that are used in the above code.
+    
     def parse_request(self, text):
+        # The request_data is passed to this method as a decoded UTF-8 string.
         request_line = text.splitlines()[0]
+        # This line splits the request data into lines and takes the first line
+        # which contains the request line. The request line is the first line
+        # of the HTTP request and contains the request method, path, and HTTP version.
         request_line = request_line.rstrip('\r\n')
-        # Break down the request line into components
+        # This line removes the trailing carriage return and newline characters
+        # from the request line. This is important because the request line
+        # is a string and we want to remove any extra whitespace or formatting
+        # characters that may have been added by the client or the server.
+        
+        # The request line is formatted as follows:
         (self.request_method,  # GET
          self.path,            # /hello
          self.request_version  # HTTP/1.1
@@ -221,27 +233,63 @@ class WSGIServer(object):
             # is sending back to the client and for troubleshooting issues with
             # the response.
             response_bytes = response.encode()
+            # This line encodes the response string to bytes. This is necessary
+            # because the client connection expects the response to be in bytes.
             self.client_connection.sendall(response_bytes)
+            # .sendall() is a method that sends the response bytes to the client
+            # connection.
         finally:
             self.client_connection.close()
-
+            # This line closes the client connection. This is important because
+            # it frees up resources and allows the server to handle new client
+            # connections.
 
 SERVER_ADDRESS = (HOST, PORT) = '', 8888
+# The server address constants are defined here.
 
 
 def make_server(server_address, application):
     server = WSGIServer(server_address)
+    # This line creates a new WSGIServer object, passing in the server address
+    # (a tuple containing host and port). This triggers the __init__ method code,
+    # which sets up the socket, binds it to the address and prepares to listien for
+    # incoming connections.
     server.set_app(application)
+    # This calls the set_app class method to attach the WSGI application (in this case Django)
+    # to the server, so the server knows what application should handle incoming requests.
     return server
+# Returns the server instance so the caller can use it.
 
 
+# The following code is used to run the server from the command line.
+# It checks if the script is being run directly (not imported as a module)
+# and if so, it creates a server instance and starts serving requests.
+# This is a common pattern in Python scripts to allow for both
+# standalone execution and importation as a module.
+# The __name__ variable is a special built-in variable in Python that
+# represents the name of the current module. When a Python script is run,
+# the __name__ variable is set to '__main__'.
 if __name__ == '__main__':
     if len(sys.argv) < 2:
+        # This line checks if the script is being run with the correct number of arguments.
+        # If not, it prints an error message and exits the script.
+        # The sys.argv list contains the command-line arguments passed to the script.
         sys.exit('Provide a WSGI application object as module:callable')
     app_path = sys.argv[1]
+    # This line gets the WSGI application path (path to Django) from the command line arguments.
     module, application = app_path.split(':')
+    # This splits the path into the module and application name.
     module = __import__(module)
+    # This line imports the module specified in the command line argument.
+    # __import__ is a built-in function that imports a module by name.
     application = getattr(module, application)
+    # This line gets the WSGI application callable from the imported module.
+    # getattr is a built-in function that gets an attribute (in this case the
+    # Django settings file) from an object (in this case the module).
+    # The application callable is the entry point for the WSGI application.
     httpd = make_server(SERVER_ADDRESS, application)
+    # The make_server function is called to create a new WSGIServer
+    # instance, passing in the server address and the application specified above.
     print(f'WSGIServer: Serving HTTP on port {PORT} ...\n')
     httpd.serve_forever()
+    # The serve_forever  class method is called to start the server and begin.
