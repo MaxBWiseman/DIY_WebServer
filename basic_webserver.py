@@ -8,7 +8,7 @@ class WSGIServer(object):
     address_family = socket.AF_INET
     # This is the default socket type for TCP/IP, AF_INET means IPv4
     socket_type = socket.SOCK_STREAM
-    # SOCK_STREAN means a TCP socket
+    # SOCK_STREAM means a TCP socket
     request_queue_size = 1
     # The number of requests to queue up before refusing new connections
     
@@ -55,19 +55,33 @@ class WSGIServer(object):
         # SO_REUSEADDR is the specific option just mentioned (allow address reuse).
         # 1 is a boolean value that enables the option. 0 would disable it.
         
-        # Bind
         listen_socket.bind(server_address)
-        # Activate
+        # .bind is a method that binds the listien_socket created above to the
+        # server address. This a the IP and port tuple.
         listen_socket.listen(self.request_queue_size)
-        # Get server host name and port
+        # .listien is a method that tells the socket to listien for incomming connections.
+        # It includes request queue size that is set to 1 for this test server.
         host, port = self.listen_socket.getsockname()[:2]
+        # This grabs the host and port number from the listen_socket object.
+        # .getsockname() returns a tuple of the host and port number.
+        # The [:2] slice is used to get the first two elements of the tuple.
         self.server_name = socket.getfqdn(host)
+        # .getfqdn() stands for get fully qualified domain name. It returns the domain name if 
+        # one is available. If not, you will get the IP address of the server.
         self.server_port = port
-        # Return headers set by Web framework/Web application
+        # Assign the port number to the server_port class variable.
         self.headers_set = []
+        # This returns the headers sent by the client for framework compatability.
 
     def set_app(self, application):
         self.application = application
+        # This essentially attaches the Django application to the server.
+        # the application parameter is the Django WSGI application from
+        # diy_web_server.wsgi, which processes HTTP requests according to your
+        # Django URL configuration and views. This simple method is what
+        # enables your custom server to host any WSGI-compliant web
+        # application, not just Django. You could just as easily use it with
+        # Flask, Pyramid, or any other WSGI-compatible framework.
 
     def serve_forever(self):
         listen_socket = self.listen_socket
