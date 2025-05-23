@@ -1,6 +1,7 @@
 import io
 import socket
 import sys
+import datetime
 
 
 class WSGIServer(object):
@@ -118,7 +119,7 @@ class WSGIServer(object):
         # incoming data, while ">" signifies outgoing data.
 
         self.parse_request(request_data)
-        # The decoded request data is passed to the parse_request method.
+        # The decoded request data is passed to the parse_request class method.
         # This method breaks down the request data into its defined components.
         # These components are then used to construct the WSGI environment
         # dictionary that is passed to the WSGI application callable.
@@ -126,12 +127,13 @@ class WSGIServer(object):
         # Here I contruct the just mentioned WSGI environment dictionary.
         # Here is all the information that is passed to the WSGI application
         # callable. This includes the request method, path, server name,
-        # server port, and other necessary information.
+        # server port, and other necessary information using the class method
+        # get_environ().
 
         result = self.application(env, self.start_response)
         # This line starts the WSGI compatible application (in this case Django)
         # callable with the environment dictionary and the start_response
-        # method that is used to set the response status and headers.
+        # class method that is used to set the response status and headers.
 
         self.finish_response(result)
         # This contructs a HTTP response from the result returned by the WSGI
@@ -174,9 +176,17 @@ class WSGIServer(object):
         return env
 
     def start_response(self, status, response_headers, exc_info=None):
+        current_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+        # This line gets the current date and time in UTC format.
+        # The strftime method formats the date and time according to the
+        # specified format string. The format string used here is the
+        # RFC 1123 date format, which is the standard format for HTTP
+        # date headers.
+        
         # Add necessary server headers
         server_headers = [
-            ('Date', 'Mon, 15 Jul 2019 5:54:48 GMT'),
+            # set server date dynamically
+            ('Date', f'${current_date}'),
             ('Server', 'WSGIServer 0.2'),
         ]
         self.headers_set = [status, response_headers + server_headers]
@@ -188,16 +198,28 @@ class WSGIServer(object):
     def finish_response(self, result):
         try:
             status, response_headers = self.headers_set
+            # Extract the status and response headers from the headers_set above.
             response = f'HTTP/1.1 {status}\r\n'
+            # Creates the first line of the HTTP response with the version and
+            # status code.
             for header in response_headers:
                 response += '{0}: {1}\r\n'.format(*header)
+                # Iterates through each header tuple (name, value) and formats them
+                # as key-value pairs
             response += '\r\n'
+            # This line adds a blank line to separate the headers from the body.
+            # This is a standard HTTP response format.
             for data in result:
                 response += data.decode('utf-8')
-            # Print formatted response data a la 'curl -v'
+                # The result parameter is an iterable returned by the WSGI application
+                # (Django). Each item is decoded to a UTF-8 string and added to the response.
             print(''.join(
                 f'> {line}\n' for line in response.splitlines()
             ))
+            # Another debugging output that shows the ">" outgoing HTTP response data
+            # in the terminal. This is useful for understanding what the server
+            # is sending back to the client and for troubleshooting issues with
+            # the response.
             response_bytes = response.encode()
             self.client_connection.sendall(response_bytes)
         finally:
