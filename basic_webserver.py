@@ -85,32 +85,63 @@ class WSGIServer(object):
 
     def serve_forever(self):
         listen_socket = self.listen_socket
+        # First, the listien_socket is assigned to a local variable.
         while True:
-            # New client connection
             self.client_connection, client_address = listen_socket.accept()
-            # Handle one request and close the client connection. Then
-            # loop over to wait for another client connection
+            # while True means that the server will run indefinitely.
+            # .accept() is a method that waits for a client to connect to the server.
+            # It returns a tuple of the client connection and the client address.
             self.handle_one_request()
+            # After a client connects, the server will handle one request and then
+            # return to the while loop to wait for another client connection.
+            # This is a blocking call, meaning that the server will wait for a client
+            # to connect before continuing. This is a simple way to handle multiple
+            # clients, but it is not the most efficient way. In a production server,
+            # you would want to use threading or multiprocessing to handle multiple
+            # clients at the same time.
 
     def handle_one_request(self):
         request_data = self.client_connection.recv(1024)
+        # This line receives the request data from the client connection established in
+        # the serve_forever function above. recv() is used with a parameter for 1024 bytes.
+        # This reads upto 1024 bytes from the client connection socket.
         self.request_data = request_data = request_data.decode('utf-8')
-        # Print formatted request data a la 'curl -v'
+        # decodes the bytes (request_data) to a UTF-8 string.
         print(''.join(
             f'< {line}\n' for line in request_data.splitlines()
         ))
+        # This debugging output is particularly useful when learning how web
+        # servers work or when troubleshooting issues with your WSGI application.
+        # It shows the raw HTTP request data received from the client in the
+        # terminal, which can help you understand how the server is
+        # interpreting the request and what headers are being sent. "<" signifies
+        # incoming data, while ">" signifies outgoing data.
 
         self.parse_request(request_data)
-
-        # Construct environment dictionary using request data
+        # The decoded request data is passed to the parse_request method.
+        # This method breaks down the request data into its defined components.
+        # These components are then used to construct the WSGI environment
+        # dictionary that is passed to the WSGI application callable.
         env = self.get_environ()
+        # Here I contruct the just mentioned WSGI environment dictionary.
+        # Here is all the information that is passed to the WSGI application
+        # callable. This includes the request method, path, server name,
+        # server port, and other necessary information.
 
-        # It's time to call our application callable and get
-        # back a result that will become HTTP response body
         result = self.application(env, self.start_response)
+        # This line starts the WSGI compatible application (in this case Django)
+        # callable with the environment dictionary and the start_response
+        # method that is used to set the response status and headers.
 
-        # Construct a response and send it back to the client
         self.finish_response(result)
+        # This contructs a HTTP response from the result returned by the WSGI
+        # compatible application (Django) stored in result. This includes the
+        # status code, headers and body returned by the application. Once this
+        # is sent to the client, the connection is closed.
+        # The finish_response method is responsible for sending the HTTP response
+        # back to the client. It constructs the response headers and body,
+        # encodes them to bytes, and sends them over the client connection.
+        # Finally, it closes the client connection to free up resources.
 
     def parse_request(self, text):
         request_line = text.splitlines()[0]
